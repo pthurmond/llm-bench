@@ -5,3 +5,4 @@ bench-test.db*
 reports/
 *.log
 dist/
+.DS_Store
