@@ -41,7 +41,7 @@
   );
 </script>
 
-<div class="max-w-6xl mx-auto px-5 py-8">
+<div class="mx-auto px-5 py-8" style="max-width: 1352px">
   <header class="pb-4 mb-6" style="border-bottom: 3px solid var(--color-ink)">
     <div class="flex items-end justify-between flex-wrap gap-3">
       <div>

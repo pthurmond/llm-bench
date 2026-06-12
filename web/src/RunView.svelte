@@ -3,15 +3,33 @@
 
   let { runId, onBack }: { runId: number; onBack: () => void } = $props();
 
+  // Speed scale static data for the reference table
+  const SPEED_TIERS = [
+    { label: "Painfully Slow",  range: "0–1",     assessment: "Basically unusable for evaluation",                fitForPurpose: "Don't use for evaluation",                      hw: "" },
+    { label: "Very Slow",       range: "1–5",     assessment: "Extreme patience required; batch-only viable",     fitForPurpose: "Overnight batch only; not iterative",           hw: "CPU-only (old i7), no GPU" },
+    { label: "Slow",            range: "5–15",    assessment: "Frustrating but tolerable; OK for CPU-only",       fitForPurpose: "Batch-friendly; morning/evening runs",          hw: "CPU Ryzen, integrated GPU" },
+    { label: "Usable",          range: "15–25",   assessment: "Noticeable lag; breaks interactive iteration",     fitForPurpose: "Practical iteration; 30–50 questions/session",  hw: "iPhone/iPad LLM, budget GPU" },
+    { label: "Responsive",      range: "25–40",   assessment: "Acceptable for dev; some patience required",       fitForPurpose: "Comfortable dev; active testing",               hw: "RTX 3070/4070, M2 MacBook Pro" },
+    { label: "Fast",            range: "40–60",   assessment: "Smooth; ideal for active development",             fitForPurpose: "Ideal; 100+ questions/session",                 hw: "RTX 4090, M3/M4 MacBook Pro, M4 Max 32GB" },
+    { label: "Very Fast",       range: "60–100",  assessment: "Highly responsive; no practical constraints",      fitForPurpose: "No constraints; multi-model evaluation",        hw: "Server GPU, Mac Studio M4 Max 128GB" },
+    { label: "Stupid Fast",     range: "100–200", assessment: "Quantized small models or optimized hardware",     fitForPurpose: "Massive scale; production pipelines",           hw: "A100, H100, Groq LPU" },
+    { label: "Extremely Fast",  range: "200+",    assessment: "Edge cases with tiny models or enterprise HW",     fitForPurpose: "Massive scale; production inference",           hw: "A100/H100 clusters, Groq 8B 750+ t/s" },
+  ];
+
   let status: any = $state(null);
   let summary: any = $state(null);
   let pending: any[] = $state([]);
   let responses: any[] | null = $state(null);
   let auditLoading = $state(false);
+  let auditAutoRefresh = $state(false);
   let expandedRow: string | null = $state(null);
   let cancelling = $state(false);
+  let showSpeedScale = $state(false);
   let error = $state("");
-  let timer: ReturnType<typeof setInterval> | null = null;
+
+  // Pagination
+  let pageSize = $state(25);
+  let currentPage = $state(1);
 
   const isActive = $derived(
     status?.run?.status === "running" || status?.run?.status === "pending",
@@ -20,6 +38,20 @@
     status?.progress?.total
       ? Math.round((status.progress.completed / status.progress.total) * 100)
       : 0,
+  );
+
+  const totalPages = $derived(
+    !responses || pageSize === 0 ? 1 : Math.ceil(responses.length / pageSize),
+  );
+  const pagedResponses = $derived(
+    !responses ? [] :
+    pageSize === 0 ? responses :
+    responses.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+  );
+  const pageLabel = $derived(
+    !responses ? "" :
+    pageSize === 0 ? `${responses.length} responses` :
+    `${(currentPage - 1) * pageSize + 1}–${Math.min(currentPage * pageSize, responses.length)} of ${responses.length}`,
   );
 
   async function refresh() {
@@ -37,6 +69,7 @@
     }
   }
 
+  let timer: ReturnType<typeof setInterval> | null = null;
   function stopPolling() {
     if (timer) clearInterval(timer);
     timer = null;
@@ -46,6 +79,17 @@
     refresh();
     timer = setInterval(refresh, 1500);
     return stopPolling;
+  });
+
+  // Auto-refresh audit trail while run is active
+  $effect(() => {
+    if (!auditAutoRefresh || !isActive || responses === null) return;
+    const t = setInterval(() => {
+      api.runResponses(runId)
+        .then((r) => { responses = r; })
+        .catch(() => {});
+    }, 3000);
+    return () => clearInterval(t);
   });
 
   async function grade(responseId: number, verdict: "correct" | "incorrect") {
@@ -58,6 +102,7 @@
     auditLoading = true;
     try {
       responses = await api.runResponses(runId);
+      currentPage = 1;
     } catch (e) {
       error = String(e);
     } finally {
@@ -67,6 +112,11 @@
 
   function toggleAuditRow(key: string) {
     expandedRow = expandedRow === key ? null : key;
+  }
+
+  function setPageSz(v: number) {
+    pageSize = v;
+    currentPage = 1;
   }
 
   function cellFor(model: any, qid: string) {
@@ -84,17 +134,14 @@
   }
   function dur(ms: number | null): string {
     if (ms == null) return "–";
-    return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${Math.round(ms)}ms`;
+    if (ms >= 60_000) return `${Math.floor(ms / 60_000)}m ${Math.round((ms % 60_000) / 1000)}s`;
+    if (ms >= 1000) return `${(ms / 1000).toFixed(1)}s`;
+    return `${Math.round(ms)}ms`;
   }
   function durRun(started: string | null, finished: string | null): string {
     if (!started || !finished) return "–";
-    const s = new Date(started + "Z");
-    const f = new Date(finished + "Z");
-    const diffMs = f.getTime() - s.getTime();
-    const secs = Math.round(diffMs / 1000);
-    if (secs < 60) return `${secs}s`;
-    const mins = Math.floor(secs / 60);
-    return `${mins}m ${secs % 60}s`;
+    const diffMs = new Date(finished + "Z").getTime() - new Date(started + "Z").getTime();
+    return dur(diffMs);
   }
   function fmt1(n: number | null | undefined): string {
     if (n == null) return "–";
@@ -237,11 +284,48 @@
       </div>
     </div>
 
+    <!-- Speed scale reference (collapsible) -->
+    <div class="panel p-4">
+      <button
+        class="w-full flex items-center justify-between text-sm font-semibold tracking-wide"
+        onclick={() => (showSpeedScale = !showSpeedScale)}
+      >
+        <span>Speed scale reference</span>
+        <span style="color: var(--color-muted)">{showSpeedScale ? "▲ hide" : "▼ show"}</span>
+      </button>
+      {#if showSpeedScale}
+        <div class="overflow-x-auto mt-3">
+          <table class="w-full">
+            <thead>
+              <tr>
+                <th class="th">Label</th>
+                <th class="th">tok/s range</th>
+                <th class="th">Assessment</th>
+                <th class="th">Fit for purpose</th>
+                <th class="th">Hardware examples</th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each SPEED_TIERS as tier}
+                <tr>
+                  <td class="td font-semibold text-xs whitespace-nowrap">{tier.label}</td>
+                  <td class="td font-mono text-xs">{tier.range}</td>
+                  <td class="td text-xs">{tier.assessment}</td>
+                  <td class="td text-xs">{tier.fitForPurpose}</td>
+                  <td class="td text-xs" style="color: var(--color-muted)">{tier.hw}</td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      {/if}
+    </div>
+
     <!-- Rankings -->
     <div class="panel p-4">
       <h3 class="text-sm font-semibold tracking-wide mb-1">Rankings</h3>
       <p class="text-xs mb-3" style="color: var(--color-muted)">
-        Speed = median generation rate · variance = ±σ across all trials · peak = fastest single response · ctx ⚠ = loaded context was capped below requested
+        Speed = median generation rate · variance = ±σ across all trials · Model time = wall-clock per-model test duration · ctx ⚠ = loaded context capped below requested
       </p>
       <div class="overflow-x-auto">
         <table class="w-full">
@@ -250,7 +334,7 @@
               <th class="th">#</th><th class="th">Provider</th><th class="th">Model</th>
               <th class="th">Params</th><th class="th">Quant</th><th class="th">Ctx</th>
               <th class="th">Score</th><th class="th">Logic</th><th class="th">Code</th><th class="th">Math</th>
-              <th class="th">Tokens/Q</th><th class="th">Time/Q</th>
+              <th class="th">Tokens/Q</th><th class="th">Time/Q</th><th class="th">Model time</th>
               <th class="th">tok/s (med)</th><th class="th">Peak</th><th class="th">±σ</th>
               <th class="th">TTFT</th><th class="th">Speed</th>
             </tr>
@@ -268,7 +352,7 @@
                 <td class="td font-mono text-xs">{m.quant ?? "–"}</td>
                 <td class="td font-mono text-xs">
                   {(m.loadedContext ?? m.requestedContext)?.toLocaleString()}
-                  {#if ctxMismatch(m)}<span title="loaded context ({m.loadedContext?.toLocaleString()}) less than requested ({m.requestedContext?.toLocaleString()})" style="color: var(--color-amber)"> ⚠</span>{/if}
+                  {#if ctxMismatch(m)}<span title="Loaded {m.loadedContext?.toLocaleString()} < requested {m.requestedContext?.toLocaleString()}" style="color: var(--color-amber)"> ⚠</span>{/if}
                 </td>
                 <td class="td font-mono font-semibold">{m.status === "crashed" ? "—" : `${m.total}/${summary.questions.length}`}</td>
                 <td class="td font-mono text-xs">{m.byCategory?.logic ? `${m.byCategory.logic.score}/${m.byCategory.logic.outOf}` : "–"}</td>
@@ -276,6 +360,7 @@
                 <td class="td font-mono text-xs">{m.byCategory?.math ? `${m.byCategory.math.score}/${m.byCategory.math.outOf}` : "–"}</td>
                 <td class="td font-mono text-xs">{m.avgTokensPerQ ?? "–"}</td>
                 <td class="td font-mono text-xs">{dur(m.avgMsPerQ)}</td>
+                <td class="td font-mono text-xs">{dur(m.modelDurationMs)}</td>
                 <td class="td font-mono text-xs">{fmt1(m.medianTokPerSec)}</td>
                 <td class="td font-mono text-xs">{fmt1(m.peakTokPerSec)}</td>
                 <td class="td font-mono text-xs">{m.stddevTokPerSec != null ? `±${m.stddevTokPerSec}` : "–"}</td>
@@ -337,20 +422,49 @@
 
   <!-- Response Audit -->
   <div class="panel p-4">
-    <div class="flex items-center justify-between mb-2">
+    <div class="flex items-center justify-between flex-wrap gap-3 mb-2">
       <div>
         <h3 class="text-sm font-semibold tracking-wide">Response audit</h3>
-        <p class="text-xs" style="color: var(--color-muted)">Full response from every model for every question — click a row to expand.</p>
+        <p class="text-xs" style="color: var(--color-muted)">Every response from every model — click a row to expand.</p>
       </div>
-      {#if responses === null}
+      <div class="flex items-center gap-3">
+        {#if responses !== null && isActive}
+          <label class="flex items-center gap-1.5 text-xs">
+            <input type="checkbox" bind:checked={auditAutoRefresh} class="accent-[#0f6b66]" />
+            Auto-refresh
+          </label>
+        {/if}
         <button class="btn" onclick={loadAudit} disabled={auditLoading}>
-          {auditLoading ? "Loading…" : "Load responses"}
+          {auditLoading ? "Loading…" : responses === null ? "Load responses" : "Reload"}
         </button>
-      {/if}
+      </div>
     </div>
 
     {#if responses !== null}
-      <div class="overflow-x-auto mt-3">
+      <!-- Pagination controls -->
+      <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+        <div class="flex items-center gap-2 text-xs">
+          <span style="color: var(--color-muted)">Per page:</span>
+          {#each [10, 25, 50, 100, 500, 0] as sz}
+            <button
+              class="btn"
+              style={pageSize === sz ? "font-semibold; outline: 1px solid currentColor" : ""}
+              onclick={() => setPageSz(sz)}
+            >{sz === 0 ? "All" : sz}</button>
+          {/each}
+        </div>
+        {#if pageSize > 0 && totalPages > 1}
+          <div class="flex items-center gap-2 text-xs">
+            <button class="btn" onclick={() => (currentPage = Math.max(1, currentPage - 1))} disabled={currentPage === 1}>←</button>
+            <span style="color: var(--color-muted)">Page {currentPage}/{totalPages} ({pageLabel})</span>
+            <button class="btn" onclick={() => (currentPage = Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages}>→</button>
+          </div>
+        {:else}
+          <span class="text-xs" style="color: var(--color-muted)">{pageLabel}</span>
+        {/if}
+      </div>
+
+      <div class="overflow-x-auto">
         <table class="w-full">
           <thead>
             <tr>
@@ -368,7 +482,7 @@
             </tr>
           </thead>
           <tbody>
-            {#each responses as r (r.id)}
+            {#each pagedResponses as r (r.id)}
               {@const rowKey = String(r.id)}
               {@const expanded = expandedRow === rowKey}
               <tr
@@ -393,7 +507,7 @@
               {#if expanded}
                 <tr>
                   <td colspan="11" class="td p-0">
-                    <div class="p-3 space-y-2 text-xs" style="background: var(--color-line); border-top: 1px solid var(--color-line)">
+                    <div class="p-3 space-y-2 text-xs" style="background: var(--color-line)">
                       {#if r.question_text}
                         <p><span class="font-semibold" style="color: var(--color-muted)">Question:</span> {r.question_text}</p>
                       {/if}
@@ -430,7 +544,15 @@
           </tbody>
         </table>
       </div>
-      <p class="text-xs mt-2" style="color: var(--color-muted)">{responses.length} response{responses.length === 1 ? "" : "s"} total</p>
+
+      <!-- Bottom pagination -->
+      {#if pageSize > 0 && totalPages > 1}
+        <div class="flex items-center gap-2 text-xs mt-3">
+          <button class="btn" onclick={() => (currentPage = Math.max(1, currentPage - 1))} disabled={currentPage === 1}>← Prev</button>
+          <span style="color: var(--color-muted)">Page {currentPage} of {totalPages} · {pageLabel}</span>
+          <button class="btn" onclick={() => (currentPage = Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages}>Next →</button>
+        </div>
+      {/if}
     {/if}
   </div>
 

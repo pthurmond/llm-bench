@@ -103,6 +103,14 @@ if (!machineCols.some((c) => c.name === "vram_gb")) {
   db.run("ALTER TABLE machines ADD COLUMN vram_gb REAL");
 }
 
+const rmCols = db.query("PRAGMA table_info(run_models)").all() as { name: string }[];
+if (!rmCols.some((c) => c.name === "started_at")) {
+  db.run("ALTER TABLE run_models ADD COLUMN started_at TEXT");
+}
+if (!rmCols.some((c) => c.name === "finished_at")) {
+  db.run("ALTER TABLE run_models ADD COLUMN finished_at TEXT");
+}
+
 // ---------- machines ----------
 
 export function upsertMachine(p: MachineProfile): number {
@@ -232,10 +240,22 @@ export function setRunModelStatus(
   error?: string,
   loadedContext?: number,
 ) {
-  db.run(
-    "UPDATE run_models SET status = ?, error = COALESCE(?, error), loaded_context = COALESCE(?, loaded_context) WHERE id = ?",
-    [status, error ?? null, loadedContext ?? null, id],
-  );
+  if (status === "running") {
+    db.run(
+      "UPDATE run_models SET status = ?, started_at = datetime('now'), error = COALESCE(?, error), loaded_context = COALESCE(?, loaded_context) WHERE id = ?",
+      [status, error ?? null, loadedContext ?? null, id],
+    );
+  } else if (status === "done" || status === "crashed" || status === "skipped") {
+    db.run(
+      "UPDATE run_models SET status = ?, finished_at = datetime('now'), error = COALESCE(?, error), loaded_context = COALESCE(?, loaded_context) WHERE id = ?",
+      [status, error ?? null, loadedContext ?? null, id],
+    );
+  } else {
+    db.run(
+      "UPDATE run_models SET status = ?, error = COALESCE(?, error), loaded_context = COALESCE(?, loaded_context) WHERE id = ?",
+      [status, error ?? null, loadedContext ?? null, id],
+    );
+  }
 }
 
 // ---------- responses & grades ----------
@@ -291,6 +311,7 @@ export function getRunResults(runId: number) {
     .query(
       `SELECT rm.id AS run_model_id, rm.provider, rm.model_id, rm.params, rm.quant, rm.format,
               rm.requested_context, rm.loaded_context, rm.status AS model_status, rm.error AS model_error,
+              rm.started_at AS model_started_at, rm.finished_at AS model_finished_at,
               resp.id AS response_id, resp.qid, resp.trial, resp.response, resp.extracted_answer,
               resp.ttft_ms, resp.total_ms, resp.completion_tokens, resp.tok_per_sec, resp.error AS response_error,
               g.verdict, g.method, g.detail

@@ -39,6 +39,7 @@ export interface ModelScore {
   totalCompletionTokens: number;
   avgTokensPerQ: number | null;
   avgMsPerQ: number | null;
+  modelDurationMs: number | null;
 }
 
 export interface RunSummary {
@@ -55,6 +56,12 @@ function median(nums: number[]): number | null {
   const s = [...nums].sort((a, b) => a - b);
   const mid = Math.floor(s.length / 2);
   return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
+
+function msDiff(a: string | null | undefined, b: string | null | undefined): number | null {
+  if (!a || !b) return null;
+  const diff = new Date(b + "Z").getTime() - new Date(a + "Z").getTime();
+  return diff > 0 ? Math.round(diff) : null;
 }
 
 function stddev(nums: number[]): number | null {
@@ -101,6 +108,7 @@ export function summarizeRun(runId: number): RunSummary {
         totalCompletionTokens: 0,
         avgTokensPerQ: null,
         avgMsPerQ: null,
+        modelDurationMs: null,
       });
     }
     const m = byModel.get(r.run_model_id)!;
@@ -148,6 +156,9 @@ export function summarizeRun(runId: number): RunSummary {
     }
 
     const rowsForModel = rows.filter((r) => r.run_model_id === m.runModelId && r.response_id != null);
+    // Model wall-clock duration from timestamps stamped at run start/finish.
+    const firstRow = rows.find((r) => r.run_model_id === m.runModelId);
+    m.modelDurationMs = msDiff(firstRow?.model_started_at, firstRow?.model_finished_at);
     for (const r of rowsForModel) {
       if (r.ttft_ms != null) ttfts.push(r.ttft_ms);
       if (r.completion_tokens != null) m.totalCompletionTokens += r.completion_tokens;
