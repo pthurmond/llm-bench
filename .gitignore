@@ -4,3 +4,4 @@ bench.db*
 bench-test.db*
 reports/
 *.log
+dist/
