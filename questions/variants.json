@@ -1,0 +1,114 @@
+{
+  "name": "variants",
+  "description": "Contamination-check set: mirrors default's skills with changed numbers and entities. A big score drop vs. default suggests the model memorized the famous riddles rather than reasoning.",
+  "questions": [
+    {
+      "qid": "V1",
+      "category": "logic",
+      "text": "It is known that 7 printers print 7 posters in 7 minutes. How many minutes would it take for 200 printers to print 200 posters?",
+      "answer": "7",
+      "match": { "type": "number", "expected": 7 }
+    },
+    {
+      "qid": "V2",
+      "category": "logic",
+      "text": "A patch of bamboo covering a pond triples in area every day. If it takes 30 days to completely cover the pond, on what day was exactly one-third of the pond covered?",
+      "answer": "29",
+      "match": { "type": "number", "expected": 29 }
+    },
+    {
+      "qid": "V3",
+      "category": "logic",
+      "text": "Two fathers and two sons went fishing. Each caught exactly one fish, yet only three fish were caught in total. How many people went fishing?",
+      "answer": "3",
+      "match": { "type": "number", "expected": 3 }
+    },
+    {
+      "qid": "V4",
+      "category": "logic",
+      "text": "Find the next number in the sequence: 3, 8, 15, 24, 35, ?",
+      "answer": "48",
+      "match": { "type": "number", "expected": 48 }
+    },
+    {
+      "qid": "V5",
+      "category": "logic",
+      "text": "\"Some teachers are musicians. All musicians are creative. Therefore, some teachers are creative.\" Is this inference valid?",
+      "answer": "Yes, valid",
+      "match": { "type": "keyword_any", "keywords": ["yes", "valid"] }
+    },
+    {
+      "qid": "V6",
+      "category": "code",
+      "text": "What does the following Python code return?\n\n```python\ndef mystery(lst):\n    return [x * 3 for x in lst if x % 2 == 1]\n\nprint(mystery([1, 2, 3, 4, 5, 6]))\n```",
+      "answer": "[3, 9, 15]",
+      "match": { "type": "list", "expected": [3, 9, 15] }
+    },
+    {
+      "qid": "V7",
+      "category": "code",
+      "text": "What is the output of the following JavaScript code?\n\n```javascript\nconst arr = [1, 2, 3];\nconst result = arr.reduce((acc, val) => acc * val, 2);\nconsole.log(result);\n```",
+      "answer": "12",
+      "match": { "type": "number", "expected": 12 }
+    },
+    {
+      "qid": "V8",
+      "category": "code",
+      "text": "What is the most efficient approach (in terms of extra space) to detect whether a singly linked list contains a cycle?",
+      "answer": "Floyd's cycle detection (tortoise and hare), O(1) space",
+      "match": {
+        "type": "keyword_any",
+        "keywords": ["floyd", "tortoise", "hare", "two pointer", "two-pointer", "fast and slow", "slow and fast", "fast/slow"]
+      }
+    },
+    {
+      "qid": "V9",
+      "category": "code",
+      "text": "What is the result of the following SQL query?\n\n```sql\nSELECT category, AVG(price) AS avg_price\nFROM products\nWHERE stock > 0\nGROUP BY category\nHAVING AVG(price) > 100\nORDER BY avg_price ASC;\n```",
+      "answer": "Categories of in-stock products whose average price exceeds 100, with that average, sorted ascending",
+      "match": { "type": "judge" }
+    },
+    {
+      "qid": "V10",
+      "category": "code",
+      "text": "When designing a REST API, which HTTP method and status code are correct for creating a new resource?",
+      "answer": "POST + 201 Created",
+      "match": { "type": "keyword_all", "keywords": ["post", "201"] }
+    },
+    {
+      "qid": "V11",
+      "category": "math",
+      "text": "log₃(81) + log₃(27) = ?",
+      "answer": "7",
+      "match": { "type": "number", "expected": 7 }
+    },
+    {
+      "qid": "V12",
+      "category": "math",
+      "text": "What is the derivative f'(x) of f(x) = 4x³ − 5x + 2?",
+      "answer": "12x² − 5",
+      "match": { "type": "text", "accept": ["12x^2-5", "12x²-5", "-5+12x^2", "-5+12x²"] }
+    },
+    {
+      "qid": "V13",
+      "category": "math",
+      "text": "A bag contains 4 red, 3 blue, and 5 green balls. If two balls are randomly selected, what is the probability that both are green?",
+      "answer": "5/33",
+      "match": { "type": "fraction", "expected": "5/33" }
+    },
+    {
+      "qid": "V14",
+      "category": "math",
+      "text": "Solve the equation: 2x + 9 = 5x − 6",
+      "answer": "x = 5",
+      "match": { "type": "number", "expected": 5 }
+    },
+    {
+      "qid": "V15",
+      "category": "math",
+      "text": "In the sequence where a₁ = 3 and aₙ = 3·aₙ₋₁ − 2, what is the value of a₄?",
+      "answer": "55",
+      "match": { "type": "number", "expected": 55 }
+    }
+  ]
+}

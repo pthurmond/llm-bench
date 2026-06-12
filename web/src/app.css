@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #f3f5f7;
+  --color-panel: #ffffff;
+  --color-ink: #161a1f;
+  --color-muted: #5d6b7a;
+  --color-line: #dde3e9;
+  --color-accent: #0f6b66;
+  --color-accent-soft: #e2efee;
+  --color-amber: #b45309;
+  --color-amber-soft: #fdf1e0;
+  --color-ok: #1c6b3c;
+  --color-ok-soft: #e3f2e9;
+  --color-bad: #a8323a;
+  --color-bad-soft: #fbe7e7;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  --font-sans: -apple-system, "Segoe UI", system-ui, Roboto, sans-serif;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* Data chips — the recurring monospace "specimen tag" treatment */
+.tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 4px;
+  padding: 5px 8px;
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+.tag b { color: var(--color-ink); font-weight: 600; }
+
+.panel {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+}
+
+.btn {
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--color-line);
+  background: var(--color-panel);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.btn:hover { background: var(--color-bg); }
+.btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+.btn.primary {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+.btn.primary:hover { background: #0c5752; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.input {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  border: 1px solid var(--color-line);
+  border-radius: 6px;
+  padding: 7px 9px;
+  background: var(--color-panel);
+  width: 100%;
+}
+.input:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 0; }
+
+.th {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 2px solid var(--color-ink);
+}
+.td {
+  font-size: 13px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--color-line);
+  vertical-align: middle;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

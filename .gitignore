@@ -1,0 +1,6 @@
+node_modules/
+web/node_modules/
+bench.db*
+bench-test.db*
+reports/
+*.log

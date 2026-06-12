@@ -1,0 +1,26 @@
+{
+  "name": "llm-bench",
+  "version": "0.1.0",
+  "description": "Local LLM benchmark harness: scan providers, run question sets, grade, and report.",
+  "type": "module",
+  "scripts": {
+    "cli": "bun cli.ts",
+    "help": "bun cli.ts",
+    "scan": "bun cli.ts scan",
+    "run": "bun cli.ts run",
+    "report": "bun cli.ts report",
+    "list": "bun cli.ts list",
+    "grade": "bun cli.ts grade",
+    "questions": "bun cli.ts questions",
+    "serve": "bun cli.ts serve",
+    "web:dev": "cd web && bun run dev",
+    "web:build": "cd web && bun run build",
+    "typecheck": "bunx tsc --noEmit",
+    "smoke": "LLM_BENCH_DB=tmp.db bun test/smoke.ts",
+    "setup": "bun install && cd web && bun install && bun run build"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.0",
+    "typescript": "^5.5.0"
+  }
+}

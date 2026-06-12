@@ -1,0 +1,114 @@
+{
+  "name": "default",
+  "description": "Original 15-question set (5 logic, 5 coding, 5 math) from the source benchmark. Kept verbatim for comparability with prior runs.",
+  "questions": [
+    {
+      "qid": "S1",
+      "category": "logic",
+      "text": "It is known that 5 machines produce 5 widgets in 5 minutes. How many minutes would it take for 100 machines to produce 100 widgets?",
+      "answer": "5",
+      "match": { "type": "number", "expected": 5 }
+    },
+    {
+      "qid": "S2",
+      "category": "logic",
+      "text": "Half of a lake surface is covered with water hyacinths. Every day, the covered area doubles. If it takes 48 days to completely cover the lake, how many days did it take to cover half of the lake?",
+      "answer": "47",
+      "match": { "type": "number", "expected": 47 }
+    },
+    {
+      "qid": "S3",
+      "category": "logic",
+      "text": "There are 3 fathers and 3 sons going to a doctor. What is the total number of people?",
+      "answer": "4",
+      "match": { "type": "number", "expected": 4 }
+    },
+    {
+      "qid": "S4",
+      "category": "logic",
+      "text": "Find the next number in the sequence: 2, 6, 12, 20, 30, 42, ?",
+      "answer": "56",
+      "match": { "type": "number", "expected": 56 }
+    },
+    {
+      "qid": "S5",
+      "category": "logic",
+      "text": "\"Some doctors are surgeons. All surgeons are meticulous. Therefore, some doctors are meticulous.\" Is this inference valid?",
+      "answer": "Yes, valid",
+      "match": { "type": "keyword_any", "keywords": ["yes", "valid"] }
+    },
+    {
+      "qid": "S6",
+      "category": "code",
+      "text": "What does the following Python code return?\n\n```python\ndef mystery(lst):\n    return [x**2 for x in lst if x % 2 == 0]\n\nprint(mystery([1, 2, 3, 4, 5, 6]))\n```",
+      "answer": "[4, 16, 36]",
+      "match": { "type": "list", "expected": [4, 16, 36] }
+    },
+    {
+      "qid": "S7",
+      "category": "code",
+      "text": "What is the output of the following JavaScript code?\n\n```javascript\nconst arr = [1, 2, 3];\nconst result = arr.reduce((acc, val) => acc + val, 10);\nconsole.log(result);\n```",
+      "answer": "16",
+      "match": { "type": "number", "expected": 16 }
+    },
+    {
+      "qid": "S8",
+      "category": "code",
+      "text": "What is the most efficient approach to find the middle element of a linked list?",
+      "answer": "Two pointers (tortoise and hare) — O(1) space",
+      "match": {
+        "type": "keyword_any",
+        "keywords": ["two pointer", "two-pointer", "tortoise", "hare", "fast and slow", "slow and fast", "fast/slow"]
+      }
+    },
+    {
+      "qid": "S9",
+      "category": "code",
+      "text": "What is the result of the following SQL query?\n\n```sql\nSELECT department, COUNT(*) as cnt\nFROM employees\nWHERE salary > 50000\nGROUP BY department\nHAVING COUNT(*) > 2\nORDER BY cnt DESC;\n```",
+      "answer": "Departments with >2 employees earning >50k, sorted descending",
+      "match": { "type": "judge" }
+    },
+    {
+      "qid": "S10",
+      "category": "code",
+      "text": "When designing a REST API, which HTTP method and status code are correct for deleting a resource?",
+      "answer": "DELETE + 204 No Content",
+      "match": { "type": "keyword_all", "keywords": ["delete", "204"] }
+    },
+    {
+      "qid": "S11",
+      "category": "math",
+      "text": "log₂(64) + log₂(8) = ?",
+      "answer": "9",
+      "match": { "type": "number", "expected": 9 }
+    },
+    {
+      "qid": "S12",
+      "category": "math",
+      "text": "What is the derivative f'(x) of f(x) = 3x² + 2x − 1?",
+      "answer": "6x + 2",
+      "match": { "type": "text", "accept": ["6x+2", "2+6x"] }
+    },
+    {
+      "qid": "S13",
+      "category": "math",
+      "text": "A bag contains 3 red, 5 blue, and 2 green balls. If two balls are randomly selected, what is the probability that both are blue?",
+      "answer": "2/9",
+      "match": { "type": "fraction", "expected": "2/9" }
+    },
+    {
+      "qid": "S14",
+      "category": "math",
+      "text": "Solve the equation: 3x − 7 = 5x + 1",
+      "answer": "x = −4",
+      "match": { "type": "number", "expected": -4 }
+    },
+    {
+      "qid": "S15",
+      "category": "math",
+      "text": "In the sequence where a₁ = 2 and aₙ = 2·aₙ₋₁ + 1, what is the value of a₄?",
+      "answer": "23",
+      "match": { "type": "number", "expected": 23 }
+    }
+  ]
+}
