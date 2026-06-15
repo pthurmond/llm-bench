@@ -45,15 +45,15 @@ function render(s: RunSummary): string {
   lines.push(`**Hardware:** ${machineLine}`);
   if (s.pendingReview > 0) {
     lines.push("");
-    lines.push(`> ⚠️ ${s.pendingReview} response(s) still need manual review (\`bun cli.ts grade ${run.id}\`). Scores below treat them as incorrect.`);
+    lines.push(`> ⚠️ ${s.pendingReview} response(s) still need manual review (\`bun run grade -- ${run.id}\`). Scores below treat them as incorrect.`);
   }
   lines.push("");
 
   // ----- Rankings -----
   lines.push(`## ${rankEmoji[0]} Full Rankings (${questions.length} questions)`);
   lines.push("");
-  lines.push(`| Rank | Provider | Model | Params | Quant | Ctx | Score | Logic (${catCounts.logic}) | Code (${catCounts.code}) | Math (${catCounts.math}) | tok/s (med) | TTFT (med) | Speed | Notes |`);
-  lines.push(`|:----:|----------|-------|-------:|-------|----:|:-----:|:---------:|:--------:|:--------:|------------:|-----------:|:-----:|-------|`);
+  lines.push(`| Rank | Provider | Model | Params | Quant | Ctx | Score | Logic (${catCounts.logic}) | Code (${catCounts.code}) | Math (${catCounts.math}) | Avg tok/s | Median tok/s | Peak tok/s | TTFT (med) | Speed | Notes |`);
+  lines.push(`|:----:|----------|-------|-------:|-------|----:|:-----:|:---------:|:--------:|:--------:|----------:|------------:|-----------:|-----------:|:-----:|-------|`);
   let rank = 0;
   let prevScore = -1;
   let shown = 0;
@@ -73,7 +73,7 @@ function render(s: RunSummary): string {
     const cat = (c: string) =>
       m.status === "crashed" ? "-" : `${m.byCategory[c]?.score ?? 0}/${m.byCategory[c]?.outOf ?? 0}`;
     lines.push(
-      `| ${rankCell} | ${m.provider} | ${m.modelId} | ${m.params ?? "?"} | ${m.quant ?? "-"} | ${ctx} | ${scoreCell} | ${cat("logic")} | ${cat("code")} | ${cat("math")} | ${m.medianTokPerSec ?? "-"} | ${dur(m.medianTtftMs)} | ${m.speedBucket} | ${m.error ?? ""} |`,
+      `| ${rankCell} | ${m.provider} | ${m.modelId} | ${m.params ?? "?"} | ${m.quant ?? "-"} | ${ctx} | ${scoreCell} | ${cat("logic")} | ${cat("code")} | ${cat("math")} | ${m.avgTokPerSec ?? "-"} | ${m.medianTokPerSec ?? "-"} | ${m.peakTokPerSec ?? "-"} | ${dur(m.medianTtftMs)} | ${m.speedBucket} | ${m.error ?? ""} |`,
     );
   }
   lines.push("");
@@ -85,7 +85,7 @@ function render(s: RunSummary): string {
     const best = completed[0];
     const worst = completed[completed.length - 1];
     lines.push(`### 1. Top performer`);
-    lines.push(`- **${best.modelId}** (${best.params ?? "?"}, ${best.provider}) scored **${best.total}/${questions.length}** at ${best.medianTokPerSec ?? "?"} tok/s.`);
+    lines.push(`- **${best.modelId}** (${best.params ?? "?"}, ${best.provider}) scored **${best.total}/${questions.length}** at ${best.avgTokPerSec ?? best.medianTokPerSec ?? "?"} tok/s avg.`);
     lines.push(`- Spread across the field: ${best.total} (best) vs ${worst.total} (worst) out of ${questions.length}.`);
     lines.push("");
   }
@@ -115,20 +115,21 @@ function render(s: RunSummary): string {
   }
 
   // ----- Speed notes -----
-  lines.push(`## ⚡ Speed Notes (measured tok/s, median across all responses)`);
+  lines.push(`## ⚡ Speed Notes (avg tok/s across all trials)`);
   lines.push("");
-  for (const bucket of ["very fast", "fast", "normal", "slow"]) {
+  const tierOrder = ["Extremely Fast","Stupid Fast","Very Fast","Fast","Responsive","Usable","Slow","Very Slow","Painfully Slow"];
+  for (const bucket of tierOrder) {
     const names = completed
       .filter((m) => m.speedBucket === bucket)
-      .map((m) => `${m.modelId} (${m.medianTokPerSec} tok/s)`);
-    if (names.length) lines.push(`- **${bucket[0].toUpperCase() + bucket.slice(1)}:** ${names.join(", ")}`);
+      .map((m) => `${m.modelId} (avg ${m.avgTokPerSec ?? "?"} · med ${m.medianTokPerSec ?? "?"} · peak ${m.peakTokPerSec ?? "?"} tok/s)`);
+    if (names.length) lines.push(`- **${bucket}:** ${names.join(", ")}`);
   }
   const crashedModels = models.filter((m) => m.status === "crashed");
   if (crashedModels.length) {
     lines.push(`- **Failed:** ${crashedModels.map((m) => m.modelId).join(", ")}`);
   }
   lines.push("");
-  lines.push("> Buckets: very fast ≥40 tok/s · fast 20–40 · normal 8–20 · slow <8");
+  lines.push("> Speed tiers: Extremely Fast (200+ tok/s) · Stupid Fast (100–200) · Very Fast (60–100) · Fast (40–60) · Responsive (25–40) · Usable (15–25) · Slow (5–15) · Very Slow (1–5) · Painfully Slow (<1)");
   lines.push("");
 
   // ----- Models to avoid -----

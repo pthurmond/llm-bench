@@ -23,7 +23,8 @@ export interface ModelScore {
   total: number;
   byCategory: Record<string, { score: number; outOf: number }>;
   outcomes: Map<string, QuestionOutcome>;
-  // Speed — median / peak / variance
+  // Speed — avg / median / peak / variance
+  avgTokPerSec: number | null;
   medianTokPerSec: number | null;
   peakTokPerSec: number | null;
   minTokPerSec: number | null;
@@ -95,6 +96,7 @@ export function summarizeRun(runId: number): RunSummary {
         total: 0,
         byCategory: {},
         outcomes: new Map(),
+        avgTokPerSec: null,
         medianTokPerSec: null,
         peakTokPerSec: null,
         minTokPerSec: null,
@@ -165,6 +167,7 @@ export function summarizeRun(runId: number): RunSummary {
       if (r.total_ms != null) { totalMs += r.total_ms; totalMsCount++; }
     }
 
+    m.avgTokPerSec = speeds.length > 0 ? Math.round((speeds.reduce((a, b) => a + b, 0) / speeds.length) * 10) / 10 : null;
     m.medianTokPerSec = median(speeds);
     m.peakTokPerSec = speeds.length > 0 ? Math.max(...speeds) : null;
     m.minTokPerSec = speeds.length > 0 ? Math.min(...speeds) : null;

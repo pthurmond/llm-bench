@@ -16,6 +16,13 @@
     { label: "Extremely Fast",  range: "200+",    assessment: "Edge cases with tiny models or enterprise HW",     fitForPurpose: "Massive scale; production inference",           hw: "A100/H100 clusters, Groq 8B 750+ t/s" },
   ];
 
+  const CAT_LABELS: Record<string, string> = {
+    logic: "Logic & Reasoning",
+    code: "Coding",
+    math: "Mathematics",
+  };
+  const CAT_ORDER = ["logic", "code", "math"];
+
   let status: any = $state(null);
   let summary: any = $state(null);
   let pending: any[] = $state([]);
@@ -25,6 +32,7 @@
   let expandedRow: string | null = $state(null);
   let cancelling = $state(false);
   let showSpeedScale = $state(false);
+  let showQuestions = $state(false);
   let error = $state("");
 
   // Pagination
@@ -325,7 +333,7 @@
     <div class="panel p-4">
       <h3 class="text-sm font-semibold tracking-wide mb-1">Rankings</h3>
       <p class="text-xs mb-3" style="color: var(--color-muted)">
-        Speed = median generation rate · variance = ±σ across all trials · Model time = wall-clock per-model test duration · ctx ⚠ = loaded context capped below requested
+        Speed = avg/median generation rate · variance = ±σ across all trials · Model time = wall-clock per-model test duration · ctx ⚠ = loaded context capped below requested
       </p>
       <div class="overflow-x-auto">
         <table class="w-full">
@@ -335,7 +343,7 @@
               <th class="th">Params</th><th class="th">Quant</th><th class="th">Ctx</th>
               <th class="th">Score</th><th class="th">Logic</th><th class="th">Code</th><th class="th">Math</th>
               <th class="th">Tokens/Q</th><th class="th">Time/Q</th><th class="th">Model time</th>
-              <th class="th">tok/s (med)</th><th class="th">Peak</th><th class="th">±σ</th>
+              <th class="th">tok/s (avg)</th><th class="th">Median</th><th class="th">Peak</th><th class="th">±σ</th>
               <th class="th">TTFT</th><th class="th">Speed</th>
             </tr>
           </thead>
@@ -361,6 +369,7 @@
                 <td class="td font-mono text-xs">{m.avgTokensPerQ ?? "–"}</td>
                 <td class="td font-mono text-xs">{dur(m.avgMsPerQ)}</td>
                 <td class="td font-mono text-xs">{dur(m.modelDurationMs)}</td>
+                <td class="td font-mono text-xs">{fmt1(m.avgTokPerSec)}</td>
                 <td class="td font-mono text-xs">{fmt1(m.medianTokPerSec)}</td>
                 <td class="td font-mono text-xs">{fmt1(m.peakTokPerSec)}</td>
                 <td class="td font-mono text-xs">{m.stddevTokPerSec != null ? `±${m.stddevTokPerSec}` : "–"}</td>
@@ -377,6 +386,47 @@
           </tbody>
         </table>
       </div>
+    </div>
+  {/if}
+
+  <!-- Questions & Answer Key -->
+  {#if summary?.questions?.length}
+    <div class="panel p-4">
+      <button
+        class="w-full flex items-center justify-between text-sm font-semibold tracking-wide"
+        onclick={() => (showQuestions = !showQuestions)}
+      >
+        <span>Questions &amp; Answer Key ({summary.questions.length})</span>
+        <span style="color: var(--color-muted)">{showQuestions ? "▲ hide" : "▼ show"}</span>
+      </button>
+      {#if showQuestions}
+        <div class="mt-3 space-y-5">
+          {#each CAT_ORDER as cat}
+            {@const qs = summary.questions.filter((q: any) => q.category === cat)}
+            {#if qs.length}
+              <div>
+                <h4 class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--color-muted)">
+                  {CAT_LABELS[cat] ?? cat} ({qs.length})
+                </h4>
+                <div class="space-y-2">
+                  {#each qs as q}
+                    <div class="rounded p-2 text-xs" style="background: var(--color-bg); border: 1px solid var(--color-line)">
+                      <div class="flex items-start gap-2 mb-1">
+                        <span class="font-mono font-semibold shrink-0" style="color: var(--color-muted)">{q.qid}</span>
+                        <span class="whitespace-pre-wrap">{q.text}</span>
+                      </div>
+                      <div class="flex items-start gap-2 pl-8">
+                        <span style="color: var(--color-muted)">Answer:</span>
+                        <span class="font-mono font-semibold" style="color: var(--color-ok)">{q.answer}</span>
+                      </div>
+                    </div>
+                  {/each}
+                </div>
+              </div>
+            {/if}
+          {/each}
+        </div>
+      {/if}
     </div>
   {/if}
 

@@ -224,7 +224,7 @@ async function cmdGrade() {
     if (v.startsWith("c")) setGrade(p.id, "correct", "manual");
     else if (v.startsWith("i")) setGrade(p.id, "incorrect", "manual");
   }
-  console.log("\nDone. Re-generate the report: bun cli.ts report " + runId);
+  console.log("\nDone. Re-generate the report: bun run report -- " + runId);
 }
 
 async function cmdQuestions() {

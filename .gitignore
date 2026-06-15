@@ -6,3 +6,8 @@ reports/
 *.log
 dist/
 .DS_Store
+*.db
+*.db-shm
+*.db-wal
+web/dist/
+llm-bench/web/dist/
